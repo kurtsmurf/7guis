@@ -11,11 +11,12 @@ function Counter() {
 
   return (
     <div class="task">
-      <div>{count}</div>
-      <div>
-      <button onClick={() => setCount(count + 1)}>
-        Count
-      </button>
+      <h3>Counter</h3>
+      <div class="input-group">
+        <input type="number" readonly value={count} />
+        <button onClick={() => setCount(count + 1)}>
+          Count
+        </button>
       </div>
     </div>
   );
