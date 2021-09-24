@@ -2,7 +2,7 @@ import { useState } from "preact/hooks";
 
 export function App() {
   return (
-    <div className="stack">
+    <div class="stack">
       <Counter />
       <TemperatureConverter />
       <FlightBooker />
@@ -14,9 +14,9 @@ function Counter() {
   const [count, setCount] = useState(0);
 
   return (
-    <div class="task">
+    <div class="task stack">
       <h3>Counter</h3>
-      <div class="input-group">
+      <div class="row">
         <input type="number" readonly value={count} />
         <button onClick={() => setCount(count + 1)}>
           Count
@@ -31,9 +31,9 @@ function TemperatureConverter() {
   const celsius = (fahrenheit - 32) * (5 / 9);
 
   return (
-    <div className="task">
+    <div class="task stack">
       <h3>Temperature Converter</h3>
-      <div className="input-group">
+      <div class="row">
         <input
           type="number"
           name="celsius"
@@ -75,9 +75,9 @@ function FlightBooker() {
   const format = (date: Date) => date.toISOString().slice(0, 10);
 
   return (
-    <div className="task">
+    <div class="task stack">
       <h3>Flight Booker</h3>
-      <div className="stack">
+      <div class="stack">
         <select
           name="flight"
           id="flight"
@@ -124,9 +124,9 @@ function FlightBooker() {
 
 // function Task() {
 //   return (
-//     <div className="task">
+//     <div class="task stack">
 //       <h3>Task</h3>
-//       <div className="input-group">
+//       <div class="row">
 //       </div>
 //     </div>
 //   )
