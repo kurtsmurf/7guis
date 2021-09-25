@@ -8,6 +8,7 @@ export function App() {
       <TemperatureConverter />
       <FlightBooker />
       <Timer />
+      <CRUD />
     </div>
   );
 }
@@ -162,7 +163,7 @@ function Timer() {
           }
           case "TICK": {
             const elapsed = differenceInSeconds(state.start, new Date());
-            const active = elapsed < state.duration
+            const active = elapsed < state.duration;
 
             return {
               ...state,
@@ -189,7 +190,7 @@ function Timer() {
               ...state,
               active: true,
               start: new Date(),
-              elapsed: 0
+              elapsed: 0,
             };
           }
           case "UPDATE_DURATION": {
@@ -254,6 +255,70 @@ function Timer() {
         />
       </div>
       <button onClick={reset}>Reset</button>
+    </div>
+  );
+}
+
+function CRUD() {
+  type fullName = {
+    name: string;
+    surname: string;
+  };
+
+  type person = {
+    id: number;
+    fullName: fullName;
+  };
+
+  type crudState = {
+    nextId: number;
+    persons: person[];
+  };
+
+  type crudEvent =
+    | { type: "CREATE"; fullName: fullName }
+    | { type: "UPDATE"; person: person }
+    | { type: "DELETE"; personId: number };
+
+  const initialState = { nextId: 0, persons: [] };
+
+  const reducer = (state: crudState, event: crudEvent) => {
+    switch (event.type) {
+      case "CREATE": {
+        return {
+          ...state,
+          nextId: state.nextId + 1,
+          persons: [
+            ...state.persons,
+            {
+              id: state.nextId,
+              fullName: event.fullName,
+            },
+          ],
+        };
+      }
+      case "DELETE": {
+        return {
+          ...state,
+          persons: state.persons.filter((p) => p.id !== event.personId),
+        };
+      }
+      case "UPDATE": {
+        return {
+          ...state,
+          persons: state.persons.map((p) =>
+            p.id === event.person.id ? event.person : p
+          ),
+        };
+      }
+    }
+  };
+
+  const [state, dispatch] = useReducer(reducer, initialState);
+
+  return (
+    <div class="task stack">
+      <h3>CRUD</h3>
     </div>
   );
 }
