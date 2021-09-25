@@ -321,6 +321,7 @@ function CRUD() {
   const [name, setName] = useState("");
   const [surname, setSurname] = useState("");
   const [selected, setSelected] = useState(-1);
+  const [filter, setFilter] = useState("");
 
   useEffect(() => {
     const selectedPerson = state.persons.find((p) => p.id === selected);
@@ -333,8 +334,8 @@ function CRUD() {
       type: "CREATE",
       fullName: { name, surname },
     });
-    setSelected(state.nextId)
-  }
+    setSelected(state.nextId);
+  };
 
   const updatePerson = () =>
     dispatch({
@@ -347,8 +348,8 @@ function CRUD() {
 
   const deletePerson = () => {
     dispatch({ type: "DELETE", personId: selected });
-    setSelected(-1)
-  }
+    setSelected(-1);
+  };
 
   const handleNameInput = (e: Event) => {
     const nameInput = e.target as HTMLInputElement;
@@ -360,9 +361,24 @@ function CRUD() {
     setSurname(surnameInput.value);
   };
 
+  const handleFilterInput = (e: Event) => {
+    const filterInput = e.target as HTMLInputElement;
+    setFilter(filterInput.value);
+  };
+
   return (
     <div class="task stack">
       <h3>CRUD</h3>
+      <div className="row row-right">
+        <label htmlFor="filter">Filter prefix:</label>
+        <input
+          onInput={handleFilterInput}
+          type="text"
+          name="filter"
+          id="filter"
+          value={filter}
+        />
+      </div>
       <select
         name="persons"
         id="persons"
@@ -372,11 +388,15 @@ function CRUD() {
           setSelected(parseFloat(select.value));
         }}
       >
-        {state.persons.map((person) => (
-          <option value={person.id} selected={person.id === selected}>
-            {person.fullName.surname}, {person.fullName.name}
-          </option>
-        ))}
+        {state.persons
+          .filter((person) =>
+            !!filter ? person.fullName.surname.startsWith(filter) : true
+          )
+          .map((person) => (
+            <option value={person.id} selected={person.id === selected}>
+              {person.fullName.surname}, {person.fullName.name}
+            </option>
+          ))}
       </select>
       <div className="row row-right">
         <label htmlFor="name">Name:</label>
@@ -399,8 +419,8 @@ function CRUD() {
         />
       </div>
       <button onClick={createPerson}>create</button>
-      <button onClick={updatePerson}>update</button>
-      <button onClick={deletePerson}>delete</button>
+      <button onClick={updatePerson} disabled={selected < 0}>update</button>
+      <button onClick={deletePerson} disabled={selected < 0}>delete</button>
     </div>
   );
 }
