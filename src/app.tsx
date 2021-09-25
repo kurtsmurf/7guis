@@ -121,9 +121,6 @@ function FlightBooker() {
   );
 }
 
-const differenceInSeconds = (start: Date, end: Date) =>
-  (end.getTime() - start.getTime()) / 1000;
-
 function Timer() {
   type timerState = {
     active: boolean;
@@ -139,6 +136,9 @@ function Timer() {
 
   const MAX_DURATION = 100;
 
+  const differenceInSeconds = (start: Date, end: Date) =>
+    (end.getTime() - start.getTime()) / 1000;
+
   const reducer = (state: timerState, event: timerEvent) => {
     switch (state.active) {
       case true: {
@@ -153,19 +153,21 @@ function Timer() {
           }
           case "TICK": {
             const elapsed = differenceInSeconds(state.start, new Date());
+            const active = elapsed < state.duration
+
             return {
               ...state,
-              active: elapsed < state.duration,
-              elapsed,
+              active,
+              elapsed: active ? elapsed : state.duration,
             };
           }
           case "UPDATE_DURATION": {
             const elapsed = differenceInSeconds(state.start, new Date());
-            const duration = Math.min(MAX_DURATION, event.duration);
+
             return {
               ...state,
               active: elapsed < event.duration,
-              duration,
+              duration: Math.min(MAX_DURATION, event.duration),
               elapsed,
             };
           }
@@ -174,10 +176,16 @@ function Timer() {
       case false: {
         switch (event.type) {
           case "RESET": {
-            return { ...state, active: true, start: new Date(), elapsed: 0 };
+            return {
+              ...state,
+              active: true,
+              start: new Date(),
+              elapsed: 0
+            };
           }
           case "UPDATE_DURATION": {
             const duration = Math.min(MAX_DURATION, event.duration);
+
             return {
               ...state,
               active: state.elapsed < event.duration,
