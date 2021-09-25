@@ -14,6 +14,10 @@ body {
   flex-wrap: wrap;
 }
 
+.row-right {
+  justify-content: flex-end;
+}
+
 .stack {
   display: flex;
   flex-direction: column;

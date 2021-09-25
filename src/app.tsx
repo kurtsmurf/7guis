@@ -280,7 +280,10 @@ function CRUD() {
     | { type: "UPDATE"; person: person }
     | { type: "DELETE"; personId: number };
 
-  const initialState = { nextId: 0, persons: [] };
+  const initialState = {
+    nextId: 0,
+    persons: [],
+  };
 
   const reducer = (state: crudState, event: crudEvent) => {
     switch (event.type) {
@@ -315,10 +318,84 @@ function CRUD() {
   };
 
   const [state, dispatch] = useReducer(reducer, initialState);
+  const [name, setName] = useState("");
+  const [surname, setSurname] = useState("");
+  const [selected, setSelected] = useState(-1);
+
+  useEffect(() => {
+    const selectedPerson = state.persons.find((p) => p.id === selected);
+    setName(selectedPerson?.fullName.name || "");
+    setSurname(selectedPerson?.fullName.surname || "");
+  }, [selected]);
+
+  const createPerson = () =>
+    dispatch({
+      type: "CREATE",
+      fullName: { name, surname },
+    });
+
+  const updatePerson = () =>
+    dispatch({
+      type: "UPDATE",
+      person: {
+        id: selected,
+        fullName: { name, surname },
+      },
+    });
+
+  const deletePerson = () => dispatch({ type: "DELETE", personId: selected });
+
+  const handleNameInput = (e: Event) => {
+    const nameInput = e.target as HTMLInputElement;
+    setName(nameInput.value);
+  };
+
+  const handleSurnameInput = (e: Event) => {
+    const surnameInput = e.target as HTMLInputElement;
+    setSurname(surnameInput.value);
+  };
 
   return (
     <div class="task stack">
       <h3>CRUD</h3>
+      <select
+        name="persons"
+        id="persons"
+        multiple
+        onInput={(e) => {
+          const select = e.target as HTMLInputElement;
+          setSelected(parseFloat(select.value));
+        }}
+      >
+        {state.persons.map((person) => (
+          <option value={person.id}>
+            {person.fullName.surname}, {person.fullName.name}
+          </option>
+        ))}
+      </select>
+      <div className="row row-right">
+        <label htmlFor="name">Name:</label>
+        <input
+          onInput={handleNameInput}
+          type="text"
+          name="name"
+          id="name"
+          value={name}
+        />
+      </div>
+      <div className="row row-right">
+        <label htmlFor="surname">Surname:</label>
+        <input
+          onInput={handleSurnameInput}
+          type="text"
+          name="surname"
+          id="surname"
+          value={surname}
+        />
+      </div>
+      <button onClick={createPerson}>create</button>
+      <button onClick={updatePerson}>update</button>
+      <button onClick={deletePerson}>delete</button>
     </div>
   );
 }
