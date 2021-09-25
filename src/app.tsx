@@ -3,11 +3,20 @@ import { useEffect, useReducer, useState } from "preact/hooks";
 export function App() {
   return (
     <div class="stack">
+      <Header />
       <Counter />
       <TemperatureConverter />
       <FlightBooker />
       <Timer />
     </div>
+  );
+}
+
+function Header() {
+  return (
+    <h1>
+      Solutions to <a href="https://eugenkiss.github.io/7guis/tasks">7guis</a>
+    </h1>
   );
 }
 
