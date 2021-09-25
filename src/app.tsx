@@ -328,11 +328,13 @@ function CRUD() {
     setSurname(selectedPerson?.fullName.surname || "");
   }, [selected]);
 
-  const createPerson = () =>
+  const createPerson = () => {
     dispatch({
       type: "CREATE",
       fullName: { name, surname },
     });
+    setSelected(state.nextId)
+  }
 
   const updatePerson = () =>
     dispatch({
@@ -343,7 +345,10 @@ function CRUD() {
       },
     });
 
-  const deletePerson = () => dispatch({ type: "DELETE", personId: selected });
+  const deletePerson = () => {
+    dispatch({ type: "DELETE", personId: selected });
+    setSelected(-1)
+  }
 
   const handleNameInput = (e: Event) => {
     const nameInput = e.target as HTMLInputElement;
@@ -368,7 +373,7 @@ function CRUD() {
         }}
       >
         {state.persons.map((person) => (
-          <option value={person.id}>
+          <option value={person.id} selected={person.id === selected}>
             {person.fullName.surname}, {person.fullName.name}
           </option>
         ))}
