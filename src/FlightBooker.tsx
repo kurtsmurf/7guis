@@ -26,20 +26,24 @@ export function FlightBooker() {
         type="date"
         name="start"
         id="start"
-        onInput={(e) => setDepartureDate(new Date(e.currentTarget.value))} />
+        onInput={(e) => setDepartureDate(new Date(e.currentTarget.value))}
+      />
       <input
         value={isReturn ? format(returnDate) : undefined}
         type="date"
         name="return"
         id="return"
         disabled={!isReturn}
-        onInput={(e) => setReturnDate(new Date(e.currentTarget.value))} />
+        onInput={(e) => setReturnDate(new Date(e.currentTarget.value))}
+      />
       <button
         disabled={isReturn && returnDate < departureDate}
         onClick={() => {
-          const message = `You have booked a ${isReturn
+          const message = `You have booked a ${
+            isReturn
               ? "flight"
-              : "one-way flight"} ` +
+              : "one-way flight"
+          } ` +
             `departing on ${format(departureDate)}` +
             `${isReturn ? ` and returning on ${format(returnDate)}` : ""}.`;
 

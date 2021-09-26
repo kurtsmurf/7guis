@@ -15,10 +15,12 @@ export function TemperatureConverter() {
           value={celsius.toFixed(2)}
           onInput={(e) => {
             const celsius = parseFloat(e.currentTarget.value);
-            if (typeof celsius !== "number")
+            if (typeof celsius !== "number") {
               return;
+            }
             setFahrenheit(celsius * (9 / 5) + 32);
-          }} />
+          }}
+        />
         <label htmlFor="celsius">celsius</label>
         <span>=</span>
         <input
@@ -28,10 +30,12 @@ export function TemperatureConverter() {
           value={fahrenheit.toFixed(2)}
           onInput={(e) => {
             const fahrenheit = parseFloat(e.currentTarget.value);
-            if (typeof fahrenheit !== "number")
+            if (typeof fahrenheit !== "number") {
               return;
+            }
             setFahrenheit(fahrenheit);
-          }} />
+          }}
+        />
         <label htmlFor="fahrenheit">fahrenheit</label>
       </div>
     </div>

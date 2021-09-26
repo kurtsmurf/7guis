@@ -8,13 +8,15 @@ export function Timer() {
     elapsed: number;
   };
 
-  type timerEvent = { type: "TICK"; } |
-  { type: "RESET"; } |
-  { type: "UPDATE_DURATION"; duration: number; };
+  type timerEvent =
+    | { type: "TICK" }
+    | { type: "RESET" }
+    | { type: "UPDATE_DURATION"; duration: number };
 
   const MAX_DURATION = 100;
 
-  const differenceInSeconds = (start: Date, end: Date) => (end.getTime() - start.getTime()) / 1000;
+  const differenceInSeconds = (start: Date, end: Date) =>
+    (end.getTime() - start.getTime()) / 1000;
 
   const reducer = (state: timerState, event: timerEvent) => {
     switch (state.active) {
@@ -92,10 +94,11 @@ export function Timer() {
     return () => clearInterval(handle);
   }, []);
 
-  const updateDuration = (e: Event) => dispatch({
-    type: "UPDATE_DURATION",
-    duration: parseFloat((e.target as HTMLInputElement).value),
-  });
+  const updateDuration = (e: Event) =>
+    dispatch({
+      type: "UPDATE_DURATION",
+      duration: parseFloat((e.target as HTMLInputElement).value),
+    });
 
   const reset = () => dispatch({ type: "RESET" });
 
@@ -117,7 +120,8 @@ export function Timer() {
           min="0"
           max={MAX_DURATION}
           value={state.duration}
-          onInput={updateDuration} />
+          onInput={updateDuration}
+        />
       </div>
       <button onClick={reset}>Reset</button>
     </div>

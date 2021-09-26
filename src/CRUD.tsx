@@ -16,9 +16,10 @@ export function CRUD() {
     persons: person[];
   };
 
-  type crudEvent = { type: "CREATE"; fullName: fullName; } |
-  { type: "UPDATE"; person: person; } |
-  { type: "DELETE"; personId: number; };
+  type crudEvent =
+    | { type: "CREATE"; fullName: fullName }
+    | { type: "UPDATE"; person: person }
+    | { type: "DELETE"; personId: number };
 
   const initialState = {
     nextId: 0,
@@ -49,7 +50,8 @@ export function CRUD() {
       case "UPDATE": {
         return {
           ...state,
-          persons: state.persons.map((p) => p.id === event.person.id ? event.person : p
+          persons: state.persons.map((p) =>
+            p.id === event.person.id ? event.person : p
           ),
         };
       }
@@ -76,13 +78,14 @@ export function CRUD() {
     setSelected(state.nextId);
   };
 
-  const updatePerson = () => dispatch({
-    type: "UPDATE",
-    person: {
-      id: selected,
-      fullName: { name, surname },
-    },
-  });
+  const updatePerson = () =>
+    dispatch({
+      type: "UPDATE",
+      person: {
+        id: selected,
+        fullName: { name, surname },
+      },
+    });
 
   const deletePerson = () => {
     dispatch({ type: "DELETE", personId: selected });
@@ -114,7 +117,8 @@ export function CRUD() {
           type="text"
           name="filter"
           id="filter"
-          value={filter} />
+          value={filter}
+        />
       </div>
       <select
         name="persons"
@@ -126,7 +130,8 @@ export function CRUD() {
         }}
       >
         {state.persons
-          .filter((person) => !!filter ? person.fullName.surname.startsWith(filter) : true
+          .filter((person) =>
+            !!filter ? person.fullName.surname.startsWith(filter) : true
           )
           .map((person) => (
             <option value={person.id} selected={person.id === selected}>
@@ -141,7 +146,8 @@ export function CRUD() {
           type="text"
           name="name"
           id="name"
-          value={name} />
+          value={name}
+        />
       </div>
       <div className="row row-right">
         <label htmlFor="surname">Surname:</label>
@@ -150,7 +156,8 @@ export function CRUD() {
           type="text"
           name="surname"
           id="surname"
-          value={surname} />
+          value={surname}
+        />
       </div>
       <button onClick={createPerson}>create</button>
       <button onClick={updatePerson} disabled={selected < 0}>update</button>

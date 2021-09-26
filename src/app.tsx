@@ -26,5 +26,3 @@ function Header() {
     </h1>
   );
 }
-
-
