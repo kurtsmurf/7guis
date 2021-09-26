@@ -24,6 +24,10 @@ body {
   gap: .5rem;
 }
 
+.stack-left {
+  align-items: flex-start
+}
+
 input[type=number] {
   max-width: 8ch;
 }
