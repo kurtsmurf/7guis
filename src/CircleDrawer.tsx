@@ -1,18 +1,7 @@
-import { useEffect, useRef, useState } from "preact/hooks";
+import { useRef, useState } from "preact/hooks";
 
 type position = { x: number; y: number };
 type circle = position & { radius: number };
-
-const drawCircle = (
-  context: CanvasRenderingContext2D,
-  circle: circle,
-  selected: boolean,
-) => {
-  context.beginPath();
-  context.arc(circle.x, circle.y, circle.radius, 0, Math.PI * 2, true);
-  if (selected) context.fill();
-  context.stroke();
-};
 
 const distance = (a: position, b: position) => {
   const distanceX = Math.abs(a.x - b.x);
@@ -34,25 +23,13 @@ const getNearestCircle = (
 };
 
 export function CircleDrawer() {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const svgRef = useRef<SVGSVGElement>(null);
   const [circles, setCircles] = useState<circle[]>([]);
   const [selected, setSelected] = useState(-1);
 
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const context = canvas.getContext("2d");
-    if (!context) return;
-    context.fillStyle = "lightgrey";
-    context.clearRect(0, 0, canvas.width, canvas.height);
-    circles.forEach((circle, index) =>
-      drawCircle(context, circle, index === selected)
-    );
-  }, [canvasRef.current, circles, selected]);
-
   const handleClick = (e: MouseEvent) => {
-    if (!canvasRef.current) return;
-    const rect = canvasRef.current.getBoundingClientRect();
+    if (!svgRef.current) return;
+    const rect = svgRef.current.getBoundingClientRect();
     const position = { x: e.clientX - rect.left, y: e.clientY - rect.top };
     const nearestCircle = getNearestCircle(circles, position);
 
@@ -71,7 +48,11 @@ export function CircleDrawer() {
         <button disabled>Undo</button>
         <button disabled>Redo</button>
       </div>
-      <canvas ref={canvasRef} onClick={handleClick}></canvas>
+      <svg ref={svgRef} onClick={handleClick}>
+        {circles.map((circle, index) => (
+          <circle cx={circle.x} cy={circle.y} r={circle.radius} class={index === selected ? "selected" : ""}></circle>
+        ))}
+      </svg>
     </div>
   );
 }
