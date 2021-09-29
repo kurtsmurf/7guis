@@ -15,10 +15,9 @@ const getNearestCircle = (
   circles: circle[],
   position: position,
 ): circleDistance | undefined => {
-  type accumulator = circleDistance | undefined;
-  return circles.reduce((acc: accumulator, circle, index) => {
+  return circles.reduce((accumulator: circleDistance | undefined, circle, index) => {
     const d = distance(position, circle);
-    return !acc || d < acc.distance ? { ...circle, distance: d, index } : acc;
+    return !accumulator || d < accumulator.distance ? { ...circle, distance: d, index } : accumulator;
   }, undefined);
 };
 
@@ -50,7 +49,12 @@ export function CircleDrawer() {
       </div>
       <svg ref={svgRef} onClick={handleClick}>
         {circles.map((circle, index) => (
-          <circle cx={circle.x} cy={circle.y} r={circle.radius} class={index === selected ? "selected" : ""}></circle>
+          <circle
+            cx={circle.x}
+            cy={circle.y}
+            r={circle.radius}
+            class={index === selected ? "selected" : ""}
+          ></circle>
         ))}
       </svg>
     </div>
