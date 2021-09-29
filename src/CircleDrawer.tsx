@@ -3,41 +3,17 @@ import { useRef, useState } from "preact/hooks";
 type position = { x: number; y: number };
 type circle = position & { radius: number };
 
-const distance = (a: position, b: position) => {
-  const distanceX = Math.abs(a.x - b.x);
-  const distanceY = Math.abs(a.y - b.y);
-  return Math.sqrt(Math.pow(distanceX, 2) + Math.pow(distanceY, 2));
-};
-
-type circleDistance = circle & { distance: number; index: number };
-
-const getNearestCircle = (
-  circles: circle[],
-  position: position,
-): circleDistance | undefined => {
-  return circles.reduce((accumulator: circleDistance | undefined, circle, index) => {
-    const d = distance(position, circle);
-    return !accumulator || d < accumulator.distance ? { ...circle, distance: d, index } : accumulator;
-  }, undefined);
-};
-
 export function CircleDrawer() {
   const svgRef = useRef<SVGSVGElement>(null);
   const [circles, setCircles] = useState<circle[]>([]);
   const [selected, setSelected] = useState(-1);
 
-  const handleClick = (e: MouseEvent) => {
+  const addCircle = (e: MouseEvent) => {
     if (!svgRef.current) return;
     const rect = svgRef.current.getBoundingClientRect();
     const position = { x: e.clientX - rect.left, y: e.clientY - rect.top };
-    const nearestCircle = getNearestCircle(circles, position);
-
-    if (nearestCircle && nearestCircle.distance <= nearestCircle.radius) {
-      setSelected(nearestCircle.index);
-    } else {
-      setSelected(-1);
-      setCircles([...circles, { ...position, radius: 10 }]);
-    }
+    setSelected(-1);
+    setCircles([...circles, { ...position, radius: 10 }]);
   };
 
   return (
@@ -47,9 +23,10 @@ export function CircleDrawer() {
         <button disabled>Undo</button>
         <button disabled>Redo</button>
       </div>
-      <svg ref={svgRef} onClick={handleClick}>
+      <svg ref={svgRef} onClick={addCircle}>
         {circles.map((circle, index) => (
           <circle
+            onClick={e => { setSelected(index); e.stopPropagation() }}
             cx={circle.x}
             cy={circle.y}
             r={circle.radius}
