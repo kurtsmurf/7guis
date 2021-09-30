@@ -3,7 +3,7 @@ import { useReducer, useRef, useState } from "preact/hooks";
 type position = { x: number; y: number };
 type circle = position & { radius: number };
 type domainEvent =
-  | { type: "Resize"; index: number; newRadius: number }
+  | { type: "Resize"; newRadius: number }
   | { type: "Create"; circle: circle }
   | { type: "Select"; index: number };
 type appEvent =
@@ -29,7 +29,7 @@ const domainReducer = (
       return {
         ...state,
         circles: state.circles.map((circle, index) =>
-          index === event.index
+          index === state.selected
             ? { ...circle, radius: event.newRadius }
             : circle
         ),
@@ -98,6 +98,7 @@ const appReducer = (state: appState, event: appEvent): appState => {
         ...state,
         domainEvents: [...state.domainEvents, event],
         domainState: domainReducer(state.domainState, event),
+        undoIndex: 0
       };
     }
     case "Undo": {
@@ -151,10 +152,13 @@ export function CircleDrawer() {
   const select = (index: number) => dispatch({ type: "Select", index });
   const undo = () => dispatch({ type: "Undo" });
   const redo = () => dispatch({ type: "Redo" });
+  const resize = (newRadius: number) => dispatch({ type: "Resize", newRadius });
 
   const nothingToUndo =
     appState.domainEvents.length * -1 === appState.undoIndex;
   const nothingToRedo = appState.undoIndex === 0;
+  const selectedCircle = appState.domainState.circles
+    .find((_, i) => i === appState.domainState.selected)
 
   return (
     <div class="task stack">
@@ -162,6 +166,15 @@ export function CircleDrawer() {
       <div className="row">
         <button onClick={undo} disabled={nothingToUndo}>Undo</button>
         <button onClick={redo} disabled={nothingToRedo}>Redo</button>
+        <input
+          style="margin-left: auto;"
+          type="range"
+          disabled={appState.domainState.selected === -1}
+          value={selectedCircle?.radius}
+          onChange={e => resize(
+            parseFloat((e.target as HTMLInputElement).value)
+          )}
+        />
       </div>
       <svg ref={svgRef} onClick={create}>
         {appState.domainState.circles.map((circle, index) => {
