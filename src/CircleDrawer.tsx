@@ -2,10 +2,12 @@ import { useReducer, useRef, useState } from "preact/hooks";
 
 type position = { x: number; y: number };
 type circle = position & { radius: number };
-type event =
+type domainEvent =
   | { type: "Resize"; index: number; newRadius: number }
   | { type: "Create"; circle: circle }
-  | { type: "Select"; index: number }
+  | { type: "Select"; index: number };
+type appEvent =
+  | domainEvent
   | { type: "Undo" }
   | { type: "Redo" };
 type domainState = {
@@ -14,18 +16,13 @@ type domainState = {
 };
 type appState = {
   domainState: domainState;
-  events: event[];
+  domainEvents: domainEvent[];
   undoIndex: number;
-};
-
-const initialDomainState = {
-  circles: [],
-  selected: -1,
 };
 
 const domainReducer = (
   state: domainState,
-  event: event,
+  event: domainEvent,
 ): domainState => {
   switch (event.type) {
     case "Resize": {
@@ -52,21 +49,25 @@ const domainReducer = (
       };
     }
   }
-  return state;
+};
+
+const initialDomainState = {
+  circles: [],
+  selected: -1,
 };
 
 const initialAppState: appState = {
   domainState: initialDomainState,
-  events: [],
+  domainEvents: [],
   undoIndex: 0,
 };
 
-const appReducer = (state: appState, event: event): appState => {
+const appReducer = (state: appState, event: appEvent): appState => {
   switch (event.type) {
     case "Resize": {
       return {
         ...state,
-        events: [...state.events, event],
+        domainEvents: [...state.domainEvents, event],
         domainState: domainReducer(state.domainState, event),
       };
     }
@@ -74,35 +75,39 @@ const appReducer = (state: appState, event: event): appState => {
       if (state.undoIndex === 0) {
         return {
           ...state,
-          events: [...state.events, event],
+          domainEvents: [...state.domainEvents, event],
           domainState: domainReducer(state.domainState, event),
         };
       }
       return {
         ...state,
         domainState: domainReducer(
-          state.events.slice(0, state.undoIndex).reduce(
+          state.domainEvents.slice(0, state.undoIndex).reduce(
             domainReducer,
             initialDomainState,
           ),
           event,
         ),
-        events: [...state.events.slice(0, state.undoIndex), event],
+        domainEvents: [...state.domainEvents.slice(0, state.undoIndex), event],
         undoIndex: 0,
       };
     }
     case "Select": {
+      if (state.domainState.selected === event.index) return state;
       return {
         ...state,
-        events: [...state.events, event],
+        domainEvents: [...state.domainEvents, event],
         domainState: domainReducer(state.domainState, event),
       };
     }
     case "Undo": {
-      const undoIndex = Math.max(state.events.length * -1, state.undoIndex - 1);
+      const undoIndex = Math.max(
+        state.domainEvents.length * -1,
+        state.undoIndex - 1,
+      );
       return {
         ...state,
-        domainState: state.events.slice(0, undoIndex).reduce(
+        domainState: state.domainEvents.slice(0, undoIndex).reduce(
           domainReducer,
           initialDomainState,
         ),
@@ -113,7 +118,10 @@ const appReducer = (state: appState, event: event): appState => {
       const undoIndex = Math.min(state.undoIndex + 1, 0);
       return {
         ...state,
-        domainState: state.events.slice(0, undoIndex || state.events.length)
+        domainState: state.domainEvents.slice(
+          0,
+          undoIndex || state.domainEvents.length,
+        )
           .reduce(
             domainReducer,
             initialDomainState,
@@ -125,19 +133,10 @@ const appReducer = (state: appState, event: event): appState => {
 };
 
 export function CircleDrawer() {
+  const [appState, dispatch] = useReducer(appReducer, initialAppState);
   const svgRef = useRef<SVGSVGElement>(null);
 
-  const [appState, dispatch] = useReducer(
-    (state: appState, event: event) => {
-      const nextState = appReducer(state, event);
-      console.log(nextState);
-      return nextState;
-    },
-    initialAppState,
-  );
-
   const create = (clickPos: position) => {
-    console.log(clickPos);
     if (!svgRef.current) return;
     const rect = svgRef.current.getBoundingClientRect();
     dispatch({
@@ -150,11 +149,11 @@ export function CircleDrawer() {
     });
   };
   const select = (index: number) => dispatch({ type: "Select", index });
-
   const undo = () => dispatch({ type: "Undo" });
   const redo = () => dispatch({ type: "Redo" });
 
-  const nothingToUndo = appState.events.length * -1 === appState.undoIndex;
+  const nothingToUndo =
+    appState.domainEvents.length * -1 === appState.undoIndex;
   const nothingToRedo = appState.undoIndex === 0;
 
   return (
@@ -165,19 +164,25 @@ export function CircleDrawer() {
         <button onClick={redo} disabled={nothingToRedo}>Redo</button>
       </div>
       <svg ref={svgRef} onClick={create}>
-        {appState.domainState.circles.map((circle, index) => (
-          <circle
-            onClick={(e) => {
-              e.stopPropagation();
-              select(index);
-            }}
-            cx={circle.x}
-            cy={circle.y}
-            r={circle.radius}
-            class={index === appState.domainState.selected ? "selected" : ""}
-          >
-          </circle>
-        ))}
+        {appState.domainState.circles.map((circle, index) => {
+          const className = index === appState.domainState.selected
+            ? "selected"
+            : "";
+          const handleClick = (e: MouseEvent) => {
+            e.stopPropagation();
+            select(index);
+          };
+          return (
+            <circle
+              onClick={handleClick}
+              cx={circle.x}
+              cy={circle.y}
+              r={circle.radius}
+              className={className}
+            >
+            </circle>
+          );
+        })}
       </svg>
     </div>
   );
