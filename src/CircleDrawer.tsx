@@ -72,10 +72,7 @@ const advance = (state: appState, event: domainEvent): appState => ({
 
 const fork = (state: appState, event: domainEvent): appState => ({
   ...state,
-  domainState: domainReducer(
-    rebuild(state.domainEvents, state.undoIndex),
-    event,
-  ),
+  domainState: domainReducer(state.domainState, event),
   domainEvents: [...state.domainEvents.slice(0, state.undoIndex), event],
   undoIndex: 0,
 });
