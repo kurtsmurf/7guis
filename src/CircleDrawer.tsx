@@ -51,7 +51,7 @@ const domainReducer = (
   }
 };
 
-const initialDomainState = {
+const initialDomainState: domainState = {
   circles: [],
   selected: -1,
 };
@@ -62,45 +62,32 @@ const initialAppState: appState = {
   undoIndex: 0,
 };
 
+const rebuild = (events: domainEvent[], offset: number): domainState =>
+  events
+    .slice(0, offset >= 0 ? events.length : offset)
+    .reduce(
+      domainReducer,
+      initialDomainState,
+    );
+
+const advance = (state: appState, event: domainEvent): appState => ({
+  ...state,
+  domainEvents: [...state.domainEvents, event],
+  domainState: domainReducer(state.domainState, event),
+});
+
+const fork = (state: appState, event: domainEvent): appState => ({
+  ...state,
+  domainState: domainReducer(
+    rebuild(state.domainEvents, state.undoIndex),
+    event,
+  ),
+  domainEvents: [...state.domainEvents.slice(0, state.undoIndex), event],
+  undoIndex: 0,
+});
+
 const appReducer = (state: appState, event: appEvent): appState => {
   switch (event.type) {
-    case "Resize": {
-      return {
-        ...state,
-        domainEvents: [...state.domainEvents, event],
-        domainState: domainReducer(state.domainState, event),
-      };
-    }
-    case "Create": {
-      if (state.undoIndex === 0) {
-        return {
-          ...state,
-          domainEvents: [...state.domainEvents, event],
-          domainState: domainReducer(state.domainState, event),
-        };
-      }
-      return {
-        ...state,
-        domainState: domainReducer(
-          state.domainEvents.slice(0, state.undoIndex).reduce(
-            domainReducer,
-            initialDomainState,
-          ),
-          event,
-        ),
-        domainEvents: [...state.domainEvents.slice(0, state.undoIndex), event],
-        undoIndex: 0,
-      };
-    }
-    case "Select": {
-      if (state.domainState.selected === event.index) return state;
-      return {
-        ...state,
-        domainEvents: [...state.domainEvents, event],
-        domainState: domainReducer(state.domainState, event),
-        undoIndex: 0
-      };
-    }
     case "Undo": {
       const undoIndex = Math.max(
         state.domainEvents.length * -1,
@@ -108,28 +95,27 @@ const appReducer = (state: appState, event: appEvent): appState => {
       );
       return {
         ...state,
-        domainState: state.domainEvents.slice(0, undoIndex).reduce(
-          domainReducer,
-          initialDomainState,
-        ),
+        domainState: rebuild(state.domainEvents, undoIndex),
         undoIndex,
       };
     }
     case "Redo": {
-      const undoIndex = Math.min(state.undoIndex + 1, 0);
+      if (state.undoIndex === 0) return state;
+      const undoIndex = state.undoIndex + 1;
       return {
         ...state,
-        domainState: state.domainEvents.slice(
-          0,
-          undoIndex || state.domainEvents.length,
-        )
-          .reduce(
-            domainReducer,
-            initialDomainState,
-          ),
+        domainState: rebuild(state.domainEvents, undoIndex),
         undoIndex,
       };
     }
+    // Special case: don't push duplicate selects onto the event stack
+    case "Select":
+      if (state.domainState.selected === event.index) return state;
+      // ...otherwise fall through
+    default:
+      return (state.undoIndex === 0)
+        ? advance(state, event)
+        : fork(state, event);
   }
 };
 
@@ -158,7 +144,7 @@ export function CircleDrawer() {
     appState.domainEvents.length * -1 === appState.undoIndex;
   const nothingToRedo = appState.undoIndex === 0;
   const selectedCircle = appState.domainState.circles
-    .find((_, i) => i === appState.domainState.selected)
+    .find((_, i) => i === appState.domainState.selected);
 
   return (
     <div class="task stack">
@@ -171,31 +157,28 @@ export function CircleDrawer() {
           type="range"
           disabled={appState.domainState.selected === -1}
           value={selectedCircle?.radius}
-          onChange={e => resize(
-            parseFloat((e.target as HTMLInputElement).value)
-          )}
+          onChange={(e) =>
+            resize(
+              parseFloat((e.target as HTMLInputElement).value),
+            )}
         />
       </div>
       <svg ref={svgRef} onClick={create}>
-        {appState.domainState.circles.map((circle, index) => {
-          const className = index === appState.domainState.selected
-            ? "selected"
-            : "";
-          const handleClick = (e: MouseEvent) => {
-            e.stopPropagation();
-            select(index);
-          };
-          return (
-            <circle
-              onClick={handleClick}
-              cx={circle.x}
-              cy={circle.y}
-              r={circle.radius}
-              className={className}
-            >
-            </circle>
-          );
-        })}
+        {appState.domainState.circles.map((circle, index) => (
+          <circle
+            onClick={(e) => {
+              e.stopPropagation();
+              select(index);
+            }}
+            cx={circle.x}
+            cy={circle.y}
+            r={circle.radius}
+            className={index === appState.domainState.selected
+              ? "selected"
+              : ""}
+          >
+          </circle>
+        ))}
       </svg>
     </div>
   );
