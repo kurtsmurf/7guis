@@ -2,23 +2,23 @@ import { useReducer, useRef, useState } from "preact/hooks";
 
 type position = { x: number; y: number };
 type circle = position & { radius: number };
-type domainEvent =
-  | { type: "Resize"; newRadius: number }
-  | { type: "Create"; circle: circle }
-  | { type: "Select"; index: number };
-type appEvent =
-  | domainEvent
-  | { type: "Undo" }
-  | { type: "Redo" };
 type domainState = {
   circles: circle[];
   selected: number;
 };
+type domainEvent =
+  | { type: "Resize"; newRadius: number }
+  | { type: "Create"; circle: circle }
+  | { type: "Select"; index: number };
 type appState = {
   domainState: domainState;
   domainEvents: domainEvent[];
   undoIndex: number;
 };
+type appEvent =
+  | domainEvent
+  | { type: "Undo" }
+  | { type: "Redo" };
 
 const domainReducer = (
   state: domainState,
@@ -56,12 +56,6 @@ const initialDomainState: domainState = {
   selected: -1,
 };
 
-const initialAppState: appState = {
-  domainState: initialDomainState,
-  domainEvents: [],
-  undoIndex: 0,
-};
-
 const rebuild = (events: domainEvent[], offset: number): domainState =>
   events
     .slice(0, offset >= 0 ? events.length : offset)
@@ -85,6 +79,12 @@ const fork = (state: appState, event: domainEvent): appState => ({
   domainEvents: [...state.domainEvents.slice(0, state.undoIndex), event],
   undoIndex: 0,
 });
+
+const initialAppState: appState = {
+  domainState: initialDomainState,
+  domainEvents: [],
+  undoIndex: 0,
+};
 
 const appReducer = (state: appState, event: appEvent): appState => {
   switch (event.type) {
