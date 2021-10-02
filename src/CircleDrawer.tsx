@@ -7,7 +7,7 @@ type domainState = {
   selected: number;
 };
 type domainEvent =
-  | { type: "Resize"; newRadius: number }
+  | { type: "Resize"; newRadius: number; softResize: boolean }
   | { type: "Create"; circle: circle }
   | { type: "Select"; index: number };
 type appState = {
@@ -77,6 +77,11 @@ const fork = (state: appState, event: domainEvent): appState => ({
   undoIndex: 0,
 });
 
+const advanceOrFork = (state: appState, event: domainEvent): appState => 
+  (state.undoIndex === 0)
+        ? advance(state, event)
+        : fork(state, event);
+
 const initialAppState: appState = {
   domainState: initialDomainState,
   domainEvents: [],
@@ -108,11 +113,18 @@ const appReducer = (state: appState, event: appEvent): appState => {
     // Special case: don't push duplicate selects onto the event stack
     case "Select":
       if (state.domainState.selected === event.index) return state;
-      // ...otherwise fall through
+      return advanceOrFork(state, event)
+    // Special case: don't push resizes onto the event stack until you're done resizing
+    case "Resize":
+      if (event.softResize) {
+        return {
+          ...state,
+          domainState: domainReducer(state.domainState, event),
+        };
+      }
+      return advanceOrFork(state, event)
     default:
-      return (state.undoIndex === 0)
-        ? advance(state, event)
-        : fork(state, event);
+      return advanceOrFork(state, event)
   }
 };
 
@@ -135,7 +147,10 @@ export function CircleDrawer() {
   const select = (index: number) => dispatch({ type: "Select", index });
   const undo = () => dispatch({ type: "Undo" });
   const redo = () => dispatch({ type: "Redo" });
-  const resize = (newRadius: number) => dispatch({ type: "Resize", newRadius });
+  const resizeHard = (newRadius: number) =>
+    dispatch({ type: "Resize", newRadius, softResize: false });
+  const resizeSoft = (newRadius: number) =>
+    dispatch({ type: "Resize", newRadius, softResize: true });
 
   const nothingToUndo =
     appState.domainEvents.length * -1 === appState.undoIndex;
@@ -155,7 +170,11 @@ export function CircleDrawer() {
           disabled={appState.domainState.selected === -1}
           value={selectedCircle?.radius}
           onChange={(e) =>
-            resize(
+            resizeHard(
+              parseFloat((e.target as HTMLInputElement).value),
+            )}
+          onInput={(e) =>
+            resizeSoft(
               parseFloat((e.target as HTMLInputElement).value),
             )}
         />
