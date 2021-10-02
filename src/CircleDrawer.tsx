@@ -77,10 +77,8 @@ const fork = (state: appState, event: domainEvent): appState => ({
   undoIndex: 0,
 });
 
-const advanceOrFork = (state: appState, event: domainEvent): appState => 
-  (state.undoIndex === 0)
-        ? advance(state, event)
-        : fork(state, event);
+const advanceOrFork = (state: appState, event: domainEvent): appState =>
+  (state.undoIndex === 0) ? advance(state, event) : fork(state, event);
 
 const initialAppState: appState = {
   domainState: initialDomainState,
@@ -113,7 +111,7 @@ const appReducer = (state: appState, event: appEvent): appState => {
     // Special case: don't push duplicate selects onto the event stack
     case "Select":
       if (state.domainState.selected === event.index) return state;
-      return advanceOrFork(state, event)
+      return advanceOrFork(state, event);
     // Special case: don't push resizes onto the event stack until you're done resizing
     case "Resize":
       if (event.softResize) {
@@ -122,27 +120,25 @@ const appReducer = (state: appState, event: appEvent): appState => {
           domainState: domainReducer(state.domainState, event),
         };
       }
-      return advanceOrFork(state, event)
+      return advanceOrFork(state, event);
     default:
-      return advanceOrFork(state, event)
+      return advanceOrFork(state, event);
   }
 };
 
 export function CircleDrawer() {
-  const [appState, dispatch] = useReducer(appReducer, initialAppState);
+  const [
+    { domainEvents: events, domainState: { circles, selected }, undoIndex },
+    dispatch,
+  ] = useReducer(appReducer, initialAppState);
   const svgRef = useRef<SVGSVGElement>(null);
 
   const create = (clickPos: position) => {
     if (!svgRef.current) return;
     const rect = svgRef.current.getBoundingClientRect();
-    dispatch({
-      type: "Create",
-      circle: {
-        x: clickPos.x - rect.left,
-        y: clickPos.y - rect.top,
-        radius: 10,
-      },
-    });
+    const x = clickPos.x - rect.left;
+    const y = clickPos.y - rect.top;
+    dispatch({ type: "Create", circle: { x, y, radius: 10 } });
   };
   const select = (index: number) => dispatch({ type: "Select", index });
   const undo = () => dispatch({ type: "Undo" });
@@ -152,11 +148,9 @@ export function CircleDrawer() {
   const resizeSoft = (newRadius: number) =>
     dispatch({ type: "Resize", newRadius, softResize: true });
 
-  const nothingToUndo =
-    appState.domainEvents.length * -1 === appState.undoIndex;
-  const nothingToRedo = appState.undoIndex === 0;
-  const selectedCircle = appState.domainState.circles
-    .find((_, i) => i === appState.domainState.selected);
+  const nothingToUndo = events.length * -1 === undoIndex;
+  const nothingToRedo = undoIndex === 0;
+  const selectedCircle = circles[selected];
 
   return (
     <div class="task stack">
@@ -167,7 +161,7 @@ export function CircleDrawer() {
         <input
           style="margin-left: auto;"
           type="range"
-          disabled={appState.domainState.selected === -1}
+          disabled={selected === -1}
           value={selectedCircle?.radius}
           onChange={(e) =>
             resizeHard(
@@ -180,7 +174,7 @@ export function CircleDrawer() {
         />
       </div>
       <svg ref={svgRef} onClick={create}>
-        {appState.domainState.circles.map((circle, index) => (
+        {circles.map((circle, index) => (
           <circle
             onClick={(e) => {
               e.stopPropagation();
@@ -189,9 +183,7 @@ export function CircleDrawer() {
             cx={circle.x}
             cy={circle.y}
             r={circle.radius}
-            className={index === appState.domainState.selected
-              ? "selected"
-              : ""}
+            className={index === selected ? "selected" : ""}
           >
           </circle>
         ))}
