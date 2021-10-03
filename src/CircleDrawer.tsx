@@ -80,6 +80,41 @@ const fork = (state: appState, event: domainEvent): appState => ({
 const advanceOrFork = (state: appState, event: domainEvent): appState =>
   (state.undoIndex === 0) ? advance(state, event) : fork(state, event);
 
+const handleSignificantAction = (state: appState, event: domainEvent): appState => {
+  // Ignore duplicate selects
+  if (event.type === "Select" && state.domainState.selected === event.index) {
+    return state;
+  }
+
+  // On "soft" resize, update state without recording a "resize" event
+  if (event.type === "Resize" && event.softResize) {
+    return {
+      ...state,
+      domainState: domainReducer(state.domainState, event),
+    };
+  }
+
+  // Ignore multiple consecutive create requests for the same rough position
+  const distance = (a: position, b: position): number => {
+    const dX = Math.abs(a.x - b.x);
+    const dY = Math.abs(a.y - b.y);
+    return Math.sqrt(Math.pow(dX, 2) + Math.pow(dY, 2))
+  }
+  const circles = state.domainState.circles
+  const lastCircle = circles[circles.length -1]
+
+  if (
+    event.type === "Create" &&
+    lastCircle &&
+    distance(event.circle, lastCircle) < 1
+  ) {
+    return state
+  }
+
+  return advanceOrFork(state, event);
+  
+}
+
 const initialAppState: appState = {
   domainState: initialDomainState,
   domainEvents: [],
@@ -108,21 +143,7 @@ const appReducer = (state: appState, event: appEvent): appState => {
         undoIndex,
       };
     }
-    // Special case: don't push duplicate selects onto the event stack
-    case "Select":
-      if (state.domainState.selected === event.index) return state;
-      return advanceOrFork(state, event);
-    // Special case: don't push resizes onto the event stack until you're done resizing
-    case "Resize":
-      if (event.softResize) {
-        return {
-          ...state,
-          domainState: domainReducer(state.domainState, event),
-        };
-      }
-      return advanceOrFork(state, event);
-    default:
-      return advanceOrFork(state, event);
+    default: return handleSignificantAction(state, event)
   }
 };
 
@@ -176,8 +197,8 @@ export function CircleDrawer() {
       <svg ref={svgRef} onClick={create}>
         {circles.map((circle, index) => (
           <circle
-            onClick={(e) => {
-              e.stopPropagation();
+            onContextMenu={(e) => {
+              e.preventDefault();
               select(index);
             }}
             cx={circle.x}
