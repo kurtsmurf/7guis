@@ -3,6 +3,7 @@
 }
 
 body {
+  font-family: sans-serif;
   margin: .5rem;
   min-height: 100vh;
   display: grid;
