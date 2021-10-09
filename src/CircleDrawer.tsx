@@ -1,4 +1,4 @@
-import { useReducer, useRef, useState } from "preact/hooks";
+import { useReducer, useRef } from "preact/hooks";
 
 type position = { x: number; y: number };
 type circle = position & { radius: number };
@@ -56,42 +56,10 @@ const initialDomainState: domainState = {
   selected: -1,
 };
 
-const rebuild = (events: domainEvent[], offset: number): domainState =>
-  events
-    .slice(0, offset >= 0 ? events.length : offset)
-    .reduce(
-      domainReducer,
-      initialDomainState,
-    );
-
-const advance = (state: appState, event: domainEvent): appState => ({
-  ...state,
-  domainEvents: [...state.domainEvents, event],
-  domainState: domainReducer(state.domainState, event),
-});
-
-const fork = (state: appState, event: domainEvent): appState => ({
-  ...state,
-  domainState: domainReducer(state.domainState, event),
-  domainEvents: [...state.domainEvents.slice(0, state.undoIndex), event],
-  undoIndex: 0,
-});
-
-const advanceOrFork = (state: appState, event: domainEvent): appState =>
-  (state.undoIndex === 0) ? advance(state, event) : fork(state, event);
-
-const handleSignificantAction = (state: appState, event: domainEvent): appState => {
+const handleDomainEvent = (state: appState, event: domainEvent): appState => {
   // Ignore duplicate selects
   if (event.type === "Select" && state.domainState.selected === event.index) {
     return state;
-  }
-
-  // On "soft" resize, update state without recording a "resize" event
-  if (event.type === "Resize" && event.softResize) {
-    return {
-      ...state,
-      domainState: domainReducer(state.domainState, event),
-    };
   }
 
   // Ignore multiple consecutive create requests for the same rough position
@@ -102,7 +70,6 @@ const handleSignificantAction = (state: appState, event: domainEvent): appState 
   }
   const circles = state.domainState.circles
   const lastCircle = circles[circles.length -1]
-
   if (
     event.type === "Create" &&
     lastCircle &&
@@ -111,8 +78,29 @@ const handleSignificantAction = (state: appState, event: domainEvent): appState 
     return state
   }
 
-  return advanceOrFork(state, event);
-  
+  // On "soft" resize, update state without recording a "resize" event
+  if (event.type === "Resize" && event.softResize) {
+    return {
+      ...state,
+      domainState: domainReducer(state.domainState, event),
+    };
+  }
+
+  // Otherwise, record event and update domain
+  const advance = (state: appState, event: domainEvent): appState => ({
+    ...state,
+    domainEvents: [...state.domainEvents, event],
+    domainState: domainReducer(state.domainState, event),
+  });
+  const fork = (state: appState, event: domainEvent): appState => ({
+    ...state,
+    domainState: domainReducer(state.domainState, event),
+    domainEvents: [...state.domainEvents.slice(0, state.undoIndex), event],
+    undoIndex: 0,
+  });
+  return (state.undoIndex === 0)
+    ? advance(state, event)
+    : fork(state, event);
 }
 
 const initialAppState: appState = {
@@ -120,6 +108,14 @@ const initialAppState: appState = {
   domainEvents: [],
   undoIndex: 0,
 };
+
+const rebuild = (events: domainEvent[], offset: number): domainState =>
+  events
+    .slice(0, offset >= 0 ? events.length : offset)
+    .reduce(
+      domainReducer,
+      initialDomainState,
+    );
 
 const appReducer = (state: appState, event: appEvent): appState => {
   switch (event.type) {
@@ -143,7 +139,7 @@ const appReducer = (state: appState, event: appEvent): appState => {
         undoIndex,
       };
     }
-    default: return handleSignificantAction(state, event)
+    default: return handleDomainEvent(state, event)
   }
 };
 
